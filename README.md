@@ -1,5 +1,7 @@
 # App Store Review Analysis
 
+public url: https://app-store-review-analysi-39593197620.europe-west1.run.app
+
 ## Quick start
 
 ```sh
@@ -42,7 +44,7 @@ src/
     gemini_recommendations.py      Gemini HTTP, prompt, JSON schema, repeat
 ```
 
-## Як працює аналіз
+## How it works
 
 ### 1. Collection
 
