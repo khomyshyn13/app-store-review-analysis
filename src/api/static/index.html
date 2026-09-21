@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="App Store review intelligence dashboard">
+  <title>Review Lens</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">
+      <span class="brand-mark">R</span>
+      <span>Review Lens</span>
+    </a>
+    <a class="docs-link" href="/docs">API docs <span>↗</span></a>
+  </header>
+
+  <main>
+    <section class="hero" id="start">
+      <div class="eyebrow">APP STORE INTELLIGENCE</div>
+      <h1>Turn customer reviews<br>into <span>clear priorities.</span></h1>
+      <p>Collect recent App Store reviews, understand sentiment, uncover recurring problems, and receive evidence-based recommendations.</p>
+
+      <form class="search-panel" id="search-form">
+        <div class="field field-grow">
+          <label for="app-name">App name</label>
+          <input id="app-name" name="name" placeholder="e.g. Spotify, Duolingo, Nebula" autocomplete="off" required maxlength="200">
+        </div>
+        <div class="field compact">
+          <label for="country">Storefront</label>
+          <select id="country" name="country">
+            <option value="us">United States</option>
+            <option value="gb">United Kingdom</option>
+            <option value="ca">Canada</option>
+            <option value="au">Australia</option>
+            <option value="de">Germany</option>
+            <option value="fr">France</option>
+            <option value="ua">Ukraine</option>
+          </select>
+        </div>
+        <button class="primary" type="submit">Find app</button>
+      </form>
+      <p class="form-note">The analysis works best with English-language reviews.</p>
+    </section>
+
+    <section class="section hidden" id="results-section">
+      <div class="section-heading">
+        <div>
+          <span class="step">01</span>
+          <h2>Select the right app</h2>
+        </div>
+        <p>Results are provided by Apple for the selected storefront.</p>
+      </div>
+      <div class="candidate-grid" id="candidate-grid"></div>
+      <div class="collection-controls">
+        <div class="field small-field">
+          <label for="review-count">Reviews</label>
+          <input id="review-count" type="number" value="100" min="1" max="500">
+        </div>
+        <button class="primary" id="collect-button" disabled>Collect reviews</button>
+      </div>
+    </section>
+
+    <section class="dashboard hidden" id="dashboard">
+      <div class="dashboard-header">
+        <div>
+          <div class="eyebrow">ANALYSIS WORKSPACE</div>
+          <h2 id="dashboard-title">App reviews</h2>
+          <p id="dashboard-meta"></p>
+        </div>
+        <div class="actions">
+          <a class="secondary" id="raw-download" href="#">Raw data</a>
+          <a class="secondary hidden" id="report-download" href="#">Report</a>
+          <button class="primary" id="analyze-button">Run AI analysis</button>
+        </div>
+      </div>
+
+      <div class="notice hidden" id="warning-box"></div>
+
+      <div class="stat-grid" id="stat-grid"></div>
+
+      <section class="dashboard-section">
+        <div class="content-heading">
+          <div>
+            <span class="step">02</span>
+            <h3>Overview</h3>
+          </div>
+          <span class="status-pill" id="analysis-status">Awaiting analysis</span>
+        </div>
+        <div class="chart-grid" id="chart-grid"></div>
+      </section>
+
+      <section class="dashboard-section hidden" id="insights-section">
+        <div class="content-heading">
+          <div>
+            <span class="step">03</span>
+            <h3>What customers are telling you</h3>
+          </div>
+        </div>
+        <div class="insight-layout">
+          <div class="panel">
+            <h4>Sentiment</h4>
+            <div class="sentiment-list" id="sentiment-list"></div>
+          </div>
+          <div class="panel">
+            <h4>Common keywords and phrases in negative reviews</h4>
+            <p class="panel-description">Frequent terms extracted from reviews classified as negative. A term is not itself assigned a negative sentiment.</p>
+            <div class="phrase-list" id="phrase-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="dashboard-section hidden" id="recommendations-section">
+        <div class="content-heading">
+          <div>
+            <span class="step">04</span>
+            <h3>Recommended actions</h3>
+          </div>
+          <span class="muted" id="recommendation-status"></span>
+        </div>
+        <div class="recommendation-grid" id="recommendation-grid"></div>
+      </section>
+
+      <section class="dashboard-section">
+        <div class="content-heading reviews-heading">
+          <div>
+            <span class="step">05</span>
+            <h3>Review sample</h3>
+          </div>
+          <div class="review-tools">
+            <input id="review-search" type="search" placeholder="Search reviews">
+            <select id="rating-filter" aria-label="Filter by rating">
+              <option value="all">All ratings</option>
+              <option value="5">5 stars</option>
+              <option value="4">4 stars</option>
+              <option value="3">3 stars</option>
+              <option value="2">2 stars</option>
+              <option value="1">1 star</option>
+            </select>
+          </div>
+        </div>
+        <div class="review-list" id="review-list"></div>
+        <button class="text-button hidden" id="show-more">Show more reviews</button>
+      </section>
+    </section>
+  </main>
+
+  <div class="loading hidden" id="loading" role="status" aria-live="polite">
+    <div class="loader-card">
+      <div class="spinner"></div>
+      <h3 id="loading-title">Working on it</h3>
+      <p id="loading-copy">This can take a moment.</p>
+    </div>
+  </div>
+  <div class="toast hidden" id="toast" role="alert"></div>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

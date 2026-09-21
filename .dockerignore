@@ -1,0 +1,15 @@
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+.cache
+.venv
+venv
+data
+docs
+outputs
+__pycache__
+*.py[cod]
+*.egg-info
+.DS_Store
