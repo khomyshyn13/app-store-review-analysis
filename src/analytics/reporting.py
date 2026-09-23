@@ -47,7 +47,9 @@ def render_report(collection):
         for item in recommendations['items']:
             topic = topics[item['topic_id']]
             lines += ['', f"### {_text(item.get('title', item['topic_id']))}", '',
-                      f"{topic['review_count']} reviews ({topic['percentage']}% of the sample).", '',
+                      f"{topic['review_count']} reviews ({topic['percentage']}% of the sample); "
+                      f"average rating {topic.get('average_rating', 'N/A')}; priority "
+                      f"{topic.get('priority_score', 'N/A')}/100 ({topic.get('seriousness', 'unknown')}).", '',
                       f"Observation: {_text(item['observation'])}", '',
                       f"Action: {_text(item['action'])}", '',
                       f"Verification: {_text(item['verification'])}", '', 'Evidence:', '']

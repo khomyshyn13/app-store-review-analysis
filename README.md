@@ -19,6 +19,22 @@ Frontend will be avaible here: http://127.0.0.1:8000
 Backend API: http://127.0.0.1:8000/docs
 
 
+## Background analysis
+
+`POST /collections/{id}/analyze` queues work and returns `202` immediately. Progress is available
+from `GET /collections/{id}/analysis-status`; completed results remain available from the normal
+collection endpoint. The bundled worker is an in-process, single-worker queue suitable for one
+service instance. For horizontal scaling, route the same job contract through an external queue
+and keep `APP_DATA_DIR` on shared persistent storage.
+
+
+## Sentiment evaluation
+
+The report contains accuracy, macro F1, per-class metrics, and a confusion matrix. Keep the
+validation set versioned separately from training/model selection data and compare metrics before
+changing `SENTIMENT_MODEL`
+
+
 ## Structure
 
 ```text
@@ -74,7 +90,7 @@ If there are no ratings, the average and percentages are null, and counts are ze
 
 ### 4. Recommendations
 
-- **Sentiment:** `cardiffnlp/twitter-roberta-base-sentiment-latest`, English,
+- **Sentiment:** `cardiffnlp/twitter-xlm-roberta-base-sentiment`, multilingual,
 positive/negative/neutral. CPU batch inference. Long reviews are split into token blocks; 
 scores are averaged based on their length. Softmax does not represent calibrated confidence.
 - **Phrases:** spaCy performs POS/dependency parsing and generates noun and verb
@@ -82,8 +98,12 @@ phrase candidates. KeyBERT ranks candidates based on their semantic proximity to
 Python aggregates word forms via lemmas and counts unique negative reviews. 
 Phrases appearing in at least 2 reviews are returned, up to a maximum of 30 results. The `relevance_score`
 determines the order only after `review_count`; it represents neither frequency nor probability.
-- **Topics:** negative sentences from all reviews; MiniLM embeddings and agglomerative
-clustering (complete linkage, cosine distance 0.45). Single-item clusters are retained. 
+- **Topics:** negative sentences from all reviews; multilingual MiniLM embeddings and agglomerative
+clustering (complete linkage, cosine distance 0.45). Small clusters are merged into a nearby topic
+when cosine distance is at most 0.58. Each topic exposes average rating, sample share, a 0–100
+priority score (60% share and 40% rating severity), and low/medium/high seriousness.
+The response also reports singleton-topic percentage and repeated-topic review coverage so cluster
+quality can be tracked while tuning thresholds against a representative validation collection.
 Citations include `review_id`, `evidence_id`, and positions within the `nlp_text`. A single review may
 span multiple topics, so their shares do not necessarily sum to 100%.
 - **Recommendations:** up to 10 topics with the highest number of unique reviews; up to 3 citations

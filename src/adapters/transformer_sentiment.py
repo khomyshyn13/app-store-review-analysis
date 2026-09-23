@@ -12,6 +12,10 @@ def get_model(model_name):
     return tokenizer, model
 
 
+def warmup(model_name):
+    get_model(model_name)
+
+
 def classify(texts, model_name, batch_size):
     if not texts:
         return []
@@ -61,4 +65,7 @@ class TransformerSentimentAnalyzer:
         return classify(texts, self.model_name, self.batch_size)
 
     def describe(self):
-        return {"model": self.model_name, "language": "en"}
+        return {"model": self.model_name, "language": "multilingual"}
+
+    def warmup(self):
+        warmup(self.model_name)

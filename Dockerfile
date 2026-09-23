@@ -16,9 +16,8 @@ RUN apt-get update \
 COPY requirements.txt .
 
 RUN python -m pip install --upgrade pip \
-    && python -m pip install --index-url https://download.pytorch.org/whl/cpu "torch>=2.6,<3" \
-    && python -m pip install -r requirements.txt \
-    && python -m spacy download en_core_web_sm
+    && python -m pip install --index-url https://download.pytorch.org/whl/cpu "torch==2.8.0" \
+    && python -m pip install -r requirements.txt
 
 COPY src ./src
 
@@ -27,6 +26,8 @@ RUN useradd --create-home --uid 10001 appuser \
     && chown -R appuser:appuser /app
 
 USER appuser
+
+VOLUME ["/app/data"]
 
 EXPOSE 8080
 

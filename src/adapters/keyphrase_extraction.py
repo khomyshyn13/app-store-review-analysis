@@ -2,6 +2,10 @@ from collections import defaultdict
 from functools import lru_cache
 
 
+GENERIC_TERMS = {"app", "application", "service", "product", "thing", "stuff", "user",
+                 "people", "company", "phone", "mobile", "version", "update"}
+
+
 @lru_cache(maxsize=4)
 def _load_spacy(model_name):
     import spacy
@@ -81,7 +85,12 @@ class SpacyKeyBERTExtractor:
         self.result_limit = result_limit
         self.min_review_count = min_review_count
 
-    def extract(self, reviews, sentiments):
+    def warmup(self):
+        _load_spacy(self.spacy_model)
+        _load_keybert(self.embedding_model)
+
+    def extract(self, reviews, sentiments, *, excluded_terms=None):
+        excluded_terms = GENERIC_TERMS | (excluded_terms or set())
         negative_ids = {item["review_id"] for item in sentiments if item["label"] == "negative"}
         negative_reviews = [review for review in reviews if review["id"] in negative_ids]
         if not negative_reviews:
@@ -92,6 +101,11 @@ class SpacyKeyBERTExtractor:
         for review, doc in zip(negative_reviews,
                                nlp.pipe((item["nlp_text"] for item in negative_reviews), batch_size=32)):
             candidates = _candidates(doc)
+            candidates = {
+                normalized: display for normalized, display in candidates.items()
+                if not set(normalized.split()).issubset(excluded_terms)
+                and not any(term in excluded_terms for term in normalized.split())
+            }
             if not candidates:
                 continue
             display_to_normalized = {display.casefold(): normalized for normalized, display in candidates.items()}

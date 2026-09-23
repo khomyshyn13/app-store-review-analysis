@@ -18,7 +18,7 @@ class ComplaintGrouper(Protocol):
 
 
 class KeyphraseExtractor(Protocol):
-    def extract(self, reviews: list[dict], sentiments: list[dict]) -> dict: ...
+    def extract(self, reviews: list[dict], sentiments: list[dict], *, excluded_terms: set[str] | None = None) -> dict: ...
 
 
 class RecommendationGenerator(Protocol):

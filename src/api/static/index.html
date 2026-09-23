@@ -45,7 +45,18 @@
         </div>
         <button class="primary" type="submit">Find app</button>
       </form>
-      <p class="form-note">The analysis works best with English-language reviews.</p>
+      <p class="form-note">Sentiment and topic analysis supports multilingual reviews.</p>
+    </section>
+
+    <section class="section history-section" id="history-section">
+      <div class="section-heading">
+        <div>
+          <span class="step">HISTORY</span>
+          <h2>Previous collections</h2>
+        </div>
+        <button class="secondary" id="refresh-history" type="button">Refresh</button>
+      </div>
+      <div class="history-grid" id="history-grid"></div>
     </section>
 
     <section class="section hidden" id="results-section">
@@ -91,6 +102,10 @@
             <h3>Overview</h3>
           </div>
           <span class="status-pill" id="analysis-status">Awaiting analysis</span>
+        </div>
+        <div class="progress-panel hidden" id="progress-panel" aria-live="polite">
+          <div class="progress-labels"><span id="progress-stage"></span><strong id="progress-value"></strong></div>
+          <div class="bar-track"><div class="bar-fill positive" id="progress-fill"></div></div>
         </div>
         <div class="chart-grid" id="chart-grid"></div>
       </section>

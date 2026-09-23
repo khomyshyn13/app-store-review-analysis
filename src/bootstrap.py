@@ -6,6 +6,7 @@ from adapters.keyphrase_extraction import SpacyKeyBERTExtractor
 from review_analysis.service import ReviewAnalysisService
 
 
+@lru_cache(maxsize=1)
 def get_review_analysis():
     settings = get_settings()
     generator = GeminiRecommendationGenerator(
@@ -18,7 +19,8 @@ def get_review_analysis():
     ) if settings.gemini_api_key else None
     return ReviewAnalysisService(
         sentiment=TransformerSentimentAnalyzer(settings.sentiment_model, settings.sentiment_batch_size),
-        grouping=SemanticComplaintGrouper(settings.embedding_model, settings.topic_distance_threshold),
+        grouping=SemanticComplaintGrouper(settings.embedding_model, settings.topic_distance_threshold,
+                                           settings.topic_merge_threshold),
         keyphrases=SpacyKeyBERTExtractor(
             settings.spacy_model,
             settings.embedding_model,
@@ -29,3 +31,4 @@ def get_review_analysis():
         recommendations=generator,
         recommendation_topic_limit=settings.recommendation_topic_limit,
     )
+from functools import lru_cache

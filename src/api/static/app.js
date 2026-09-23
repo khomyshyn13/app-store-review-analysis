@@ -3,7 +3,8 @@ const state = {
   selected: null,
   collection: null,
   reviews: [],
-  visibleReviews: 10
+  visibleReviews: 10,
+  pollTimer: null
 };
 
 const byId = id => document.getElementById(id);
@@ -26,6 +27,47 @@ function showError(message) {
   toast.classList.remove("hidden");
   window.clearTimeout(showError.timer);
   showError.timer = window.setTimeout(() => toast.classList.add("hidden"), 6000);
+}
+
+async function loadHistory() {
+  try {
+    const data = await request("/collections?limit=30");
+    const grid = byId("history-grid");
+    if (!data.collections.length) {
+      grid.replaceChildren(makeElement("p", "empty", "No saved collections yet."));
+      return;
+    }
+    grid.replaceChildren(...data.collections.map(item => {
+      const button = makeElement("button", "history-item");
+      button.type = "button";
+      button.append(
+        makeElement("strong", "", item.app_name || "App reviews"),
+        makeElement("span", "", `${(item.country || "").toUpperCase()} · ${item.collected_count || 0} reviews · ${item.analysis_status}`),
+        makeElement("span", "", item.collected_at ? new Date(item.collected_at).toLocaleString() : "")
+      );
+      button.addEventListener("click", () => openCollection(item.collection_id));
+      return button;
+    }));
+  } catch (error) {
+    showError(`Could not load collection history: ${error.message}`);
+  }
+}
+
+async function openCollection(collectionId) {
+  setLoading(true, "Opening collection", "Loading saved results.");
+  try {
+    state.collection = await request(`/collections/${collectionId}`);
+    localStorage.setItem("reviewLensCollection", collectionId);
+    await loadReviews();
+    renderDashboard();
+    dashboard.classList.remove("hidden");
+    dashboard.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (["queued", "running"].includes(state.collection.job?.status)) pollAnalysis();
+  } catch (error) {
+    showError(error.message);
+  } finally {
+    setLoading(false);
+  }
 }
 
 async function request(url, options) {
@@ -112,10 +154,12 @@ collectButton.addEventListener("click", async () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
     });
+    localStorage.setItem("reviewLensCollection", state.collection.collection_id);
     await loadReviews();
     renderDashboard();
     dashboard.classList.remove("hidden");
     dashboard.scrollIntoView({ behavior: "smooth", block: "start" });
+    loadHistory();
   } catch (error) {
     showError(error.message);
   } finally {
@@ -143,6 +187,18 @@ function renderDashboard() {
   renderCharts();
   renderInsights();
   renderReviews();
+  renderProgress();
+}
+
+function renderProgress() {
+  const job = state.collection?.job;
+  const active = job && ["queued", "running"].includes(job.status);
+  byId("progress-panel").classList.toggle("hidden", !active);
+  byId("analyze-button").disabled = Boolean(active);
+  if (!active) return;
+  byId("progress-stage").textContent = job.stage;
+  byId("progress-value").textContent = `${job.progress}%`;
+  byId("progress-fill").style.width = `${job.progress}%`;
 }
 
 function renderWarnings() {
@@ -238,8 +294,10 @@ function renderRecommendations(insights) {
   grid.replaceChildren();
   if (!recommendations.items?.length) return;
   recommendations.items.forEach((item, index) => {
+    const topic = (insights.topics || []).find(value => value.topic_id === item.topic_id);
     const card = makeElement("article", "recommendation");
-    card.append(makeElement("div", "recommendation-index", `PRIORITY ${String(index + 1).padStart(2, "0")}`));
+    const priority = topic ? `${topic.seriousness.toUpperCase()} · ${topic.priority_score}/100` : String(index + 1).padStart(2, "0");
+    card.append(makeElement("div", "recommendation-index", `PRIORITY ${priority}`));
     card.append(makeElement("h4", "", item.title));
     card.append(makeElement("p", "", item.observation));
     const action = makeElement("div", "action-box");
@@ -297,14 +355,41 @@ byId("show-more").addEventListener("click", () => {
 
 byId("analyze-button").addEventListener("click", async () => {
   if (!state.collection) return;
-  setLoading(true, "Analyzing customer feedback", "Running sentiment, phrase and topic analysis. The first run may download local models.");
   try {
-    state.collection = await request(`/collections/${state.collection.collection_id}/analyze`, { method: "POST" });
+    state.collection.job = await request(`/collections/${state.collection.collection_id}/analyze`, { method: "POST" });
+    renderProgress();
+    pollAnalysis();
+  } catch (error) {
+    showError(error.message);
+  }
+});
+
+async function pollAnalysis() {
+  window.clearTimeout(state.pollTimer);
+  try {
+    const id = state.collection.collection_id;
+    const job = await request(`/collections/${id}/analysis-status`);
+    state.collection.job = job;
+    renderProgress();
+    if (["queued", "running"].includes(job.status)) {
+      state.pollTimer = window.setTimeout(pollAnalysis, 1500);
+      return;
+    }
+    if (job.status === "failed") {
+      showError(job.message || "Analysis failed");
+      return;
+    }
+    state.collection = await request(`/collections/${id}`);
     renderDashboard();
+    loadHistory();
     byId("insights-section").scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
     showError(error.message);
-  } finally {
-    setLoading(false);
+    if (state.collection) state.pollTimer = window.setTimeout(pollAnalysis, 4000);
   }
-});
+}
+
+byId("refresh-history").addEventListener("click", loadHistory);
+loadHistory();
+const savedCollection = localStorage.getItem("reviewLensCollection");
+if (savedCollection) openCollection(savedCollection);

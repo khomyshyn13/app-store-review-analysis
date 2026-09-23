@@ -191,6 +191,15 @@ input:focus, select:focus {
   gap: 14px;
 }
 
+.history-section { margin-top: -48px; }
+.history-grid { margin-top: 22px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.history-item { padding: 17px; text-align: left; border: 1px solid var(--line); border-radius: 14px; background: var(--white); cursor: pointer; }
+.history-item:hover { border-color: var(--accent); }
+.history-item strong, .history-item span { display: block; }
+.history-item span { margin-top: 6px; color: var(--muted); font-size: 12px; }
+.progress-panel { margin: -8px 0 22px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--white); }
+.progress-labels { display: flex; justify-content: space-between; gap: 16px; color: var(--muted); font-size: 13px; }
+
 .candidate {
   min-height: 128px;
   padding: 20px;
@@ -339,7 +348,7 @@ input:focus, select:focus {
   .hero { padding-top: 62px; }
   .search-panel { align-items: stretch; flex-direction: column; }
   .field.compact { width: 100%; }
-  .candidate-grid, .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .candidate-grid, .history-grid, .stat-grid { grid-template-columns: repeat(2, 1fr); }
   .dashboard-header, .section-heading { align-items: flex-start; flex-direction: column; }
   .insight-layout { grid-template-columns: 1fr; }
 }
@@ -349,7 +358,7 @@ input:focus, select:focus {
   .hero { padding-bottom: 76px; }
   h1 { font-size: 43px; }
   .hero > p { font-size: 16px; }
-  .candidate-grid, .stat-grid, .chart-grid, .recommendation-grid { grid-template-columns: 1fr; }
+  .candidate-grid, .history-grid, .stat-grid, .chart-grid, .recommendation-grid { grid-template-columns: 1fr; }
   .chart-card.wide { grid-column: span 1; }
   .actions { width: 100%; }
   .actions > * { flex: 1; }
